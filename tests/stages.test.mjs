@@ -192,6 +192,7 @@ const {
   currentUser,
   directedMatches,
   ensureAdmin,
+  ensureDirector,
   initStore,
   login,
   logout,
@@ -272,5 +273,47 @@ const adminSaved = directedMatches().find((match) => match.id === postedMatch.id
 assert.equal(adminSaved.directorUserId, ada.id);
 assert.equal(adminSaved.courses[matchDates[1]][0].name, "Window");
 assert.equal(adminSaved.courses[matchDates[0]][0].name, "Tank trap");
+
+logout();
+await ensureDirector();
+const directorLogin = await login({ email: "matchdirector@matchpoint.local", password: "MatchDirector" });
+assert.equal(directorLogin.ok, true);
+const demoDirector = currentUser();
+assert.equal(demoDirector.role, "member");
+assert.equal(demoDirector.permissions.matchDirector, true);
+assert.equal(demoDirector.name, "Match Director");
+const barrels = stages().find((item) => item.id === "stg-demo-barrels");
+const ladder = stages().find((item) => item.id === "stg-demo-ladder");
+assert.equal(barrels.name, "Barrels");
+assert.equal(barrels.shots, 12);
+assert.equal(barrels.time, "120");
+assert.equal(barrels.directorUserId, demoDirector.id);
+assert.deepEqual(barrels.layout, [
+  { kind: "barrel-horizontal", x: 19.1, y: 75.1 },
+  { kind: "plate", x: 43.3, y: 38.8, distance: "40" },
+  { kind: "double-hanger", x: 79.2, y: 20.1, distance: "100" },
+]);
+assert.equal(ladder.name, "Ladder");
+assert.equal(ladder.shots, 10);
+assert.equal(ladder.time, "120");
+assert.equal(ladder.directorUserId, demoDirector.id);
+assert.equal(ladder.layout.filter((item) => item.distance).map((item) => item.distance).join(","), "40,50,85");
+const before = stages().length;
+await ensureDirector();
+assert.equal(stages().filter((item) => item.id === "stg-demo-barrels").length, 1);
+assert.equal(stages().length, before);
+demoDirector.salt = "broken";
+demoDirector.passwordHash = "broken";
+demoDirector.role = "admin";
+demoDirector.permissions.matchDirector = false;
+await ensureDirector();
+assert.equal((await login({ email: "matchdirector@matchpoint.local", password: "MatchDirector" })).ok, true);
+assert.equal(currentUser().role, "member");
+assert.equal(currentUser().permissions.matchDirector, true);
+assert.equal(stages().filter((item) => item.id === "stg-demo-ladder").length, 1);
+logout();
+const reserved = await registerUser({ name: "Other Director", email: "matchdirector@matchpoint.local", password: "range-pass" });
+assert.equal(reserved.ok, false);
+assert.match(reserved.error, /match director account/);
 
 console.log("stages ok");

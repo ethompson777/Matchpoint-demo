@@ -9,6 +9,7 @@ import {
   currentUser,
   directedMatches,
   ensureAdmin,
+  ensureDirector,
   hideCatalogRecord,
   initStore,
   login,
@@ -1632,6 +1633,7 @@ async function boot() {
   initStore();
   try {
     await ensureAdmin();
+    await ensureDirector();
   } catch (error) {
     console.error(error);
   }

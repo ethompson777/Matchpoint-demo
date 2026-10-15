@@ -9,8 +9,9 @@
  * User.role is "admin" or "member". User.permissions.matchDirector is granted
  * by the general admin.
  *
- * The general admin is created once on this device:
+ * Reserved logins are repaired on boot when the email, role, or password drifts:
  * admin@matchpoint.local / RangeAdmin
+ * matchdirector@matchpoint.local / MatchDirector
  */
 
 import { cleanException, expandMatch, occurrenceDates } from "./recurrence.js";
@@ -22,6 +23,36 @@ const KEY = "matchpoint.v1";
 const ADMIN_EMAIL = "admin@matchpoint.local";
 const ADMIN_PASSWORD = "RangeAdmin";
 const ADMIN_NAME = "MatchPoint Admin";
+const DIRECTOR_EMAIL = "matchdirector@matchpoint.local";
+const DIRECTOR_PASSWORD = "MatchDirector";
+const DIRECTOR_NAME = "Match Director";
+const DIRECTOR_ID = "usr-match-director";
+
+const DEMO_STAGES = [
+  {
+    id: "stg-demo-barrels",
+    name: "Barrels",
+    shots: 12,
+    time: "120",
+    layout: [
+      { kind: "barrel-horizontal", x: 19.1, y: 75.1 },
+      { kind: "plate", x: 43.3, y: 38.8, distance: "40" },
+      { kind: "double-hanger", x: 79.2, y: 20.1, distance: "100" },
+    ],
+  },
+  {
+    id: "stg-demo-ladder",
+    name: "Ladder",
+    shots: 10,
+    time: "120",
+    layout: [
+      { kind: "ladder", x: 18, y: 68.7 },
+      { kind: "plate", x: 26.5, y: 42.5, distance: "40" },
+      { kind: "plate", x: 50.5, y: 57.1, distance: "50" },
+      { kind: "plate", x: 60.7, y: 32.1, distance: "85" },
+    ],
+  },
+];
 
 let state = blankState();
 
@@ -244,6 +275,58 @@ export async function ensureAdmin() {
     createdAt: new Date().toISOString(),
   }));
   commit();
+}
+
+function seedDirectorStages(director) {
+  let added = false;
+  for (const sample of DEMO_STAGES) {
+    if (state.stages.some((stage) => stage.id === sample.id)) continue;
+    const stage = normalizeStage({
+      ...sample,
+      directorUserId: director.id,
+      createdAt: "2026-10-15T00:00:00.000Z",
+    });
+    if (!stage) continue;
+    state.stages.push(stage);
+    added = true;
+  }
+  if (added) commit();
+}
+
+export async function ensureDirector() {
+  let director = state.users.find((user) => user.email === DIRECTOR_EMAIL);
+  const healthy = director?.role === "member"
+    && director.permissions?.matchDirector === true
+    && await passwordMatches(director, DIRECTOR_PASSWORD);
+  if (healthy) {
+    seedDirectorStages(director);
+    return;
+  }
+  const salt = crypto.randomUUID();
+  const passwordHash = await digest(salt, DIRECTOR_PASSWORD);
+  if (director) {
+    director.role = "member";
+    director.permissions = { matchDirector: true };
+    director.salt = salt;
+    director.passwordHash = passwordHash;
+    if (!director.name) director.name = DIRECTOR_NAME;
+    commit();
+  } else {
+    const id = state.users.some((user) => user.id === DIRECTOR_ID) ? uid("usr") : DIRECTOR_ID;
+    director = blankUser({
+      id,
+      name: DIRECTOR_NAME,
+      email: DIRECTOR_EMAIL,
+      salt,
+      passwordHash,
+      role: "member",
+      permissions: { matchDirector: true },
+      createdAt: new Date().toISOString(),
+    });
+    state.users.push(director);
+    commit();
+  }
+  seedDirectorStages(director);
 }
 
 export function currentUser() {
@@ -742,6 +825,9 @@ export async function registerUser({ name, email, password }) {
   if (display.length < 2) return { ok: false, error: "Enter the name you use at matches." };
   if (normalized === ADMIN_EMAIL) {
     return { ok: false, error: "That email is the staff account. Sign in instead." };
+  }
+  if (normalized === DIRECTOR_EMAIL) {
+    return { ok: false, error: "That email is the match director account. Sign in instead." };
   }
   if (state.users.some((user) => user.email === normalized)) {
     return { ok: false, error: "An account with that email already exists. Sign in instead." };
