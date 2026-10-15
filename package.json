@@ -1,0 +1,9 @@
+{
+  "name": "matchpoint",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 4173",
+    "test": "node tests/models.test.mjs && node tests/roles.test.mjs && node tests/recurrence.test.mjs && node tests/catalog.test.mjs && node tests/stages.test.mjs"
+  }
+}
