@@ -4,54 +4,58 @@
  * Piece positions are percentages of that grid. A target can carry its own distance.
  */
 
+import { NRL_ASPECT, NRL_FOOT, NRL_MARKS } from "./nrl-silhouettes.js";
 import { esc } from "./util.js";
 
-const stroke = 'fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"';
+const stroke = 'fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="square" stroke-linejoin="round"';
+const plateFill = 'fill="currentColor" stroke="none"';
 
+// Older pieces that are not in the silhouette pack. Kept so a saved stage still draws.
 const MARKS = {
   barricade: `<path d="M8 40 24 8l16 32" ${stroke}/><path d="M14 28h20M11 35h26" ${stroke}/>`,
-  tank: `<path d="M10 38 38 10M10 10l28 28" ${stroke}/><path d="M8 40h32" ${stroke}/>`,
-  roof: `<path d="M6 28 24 8l18 20" ${stroke}/><path d="M12 28v12h24V28" ${stroke}/>`,
   window: `<rect x="10" y="6" width="28" height="36" ${stroke}/><path d="M24 6v36M10 24h28" ${stroke}/>`,
-  ladder: `<path d="M16 6v36M32 6v36M16 14h16M16 22h16M16 30h16M16 38h16" ${stroke}/>`,
   tire: `<circle cx="24" cy="24" r="14" ${stroke}/><circle cx="24" cy="24" r="5" ${stroke}/>`,
   "tire-horizontal": `<ellipse cx="24" cy="26" rx="16" ry="8" ${stroke}/><ellipse cx="24" cy="26" rx="6" ry="3" ${stroke}/>`,
   table: `<path d="M8 16h32v6H8zM14 22v16M34 22v16" ${stroke}/>`,
   wall: `<rect x="14" y="6" width="20" height="36" ${stroke}/><path d="M14 16h20M14 26h20M14 36h20" ${stroke}/>`,
   tower: `<path d="M18 8h12v6" ${stroke}/><path d="M12 14h24" ${stroke}/><rect x="16" y="14" width="16" height="26" ${stroke}/>`,
-  barrel: `<ellipse cx="24" cy="14" rx="12" ry="5" ${stroke}/><path d="M12 14v18c0 3 5 6 12 6s12-3 12-6V14" ${stroke}/>`,
-  "barrel-horizontal": `<path d="M14 13h22a5 11 0 0 1 0 22H14" ${stroke}/><ellipse cx="14" cy="24" rx="5" ry="11" ${stroke}/><path d="M22 13.4v21.2M30 13.4v21.2" ${stroke}/>`,
-  bucket: `<path d="M16 15c1-8 15-8 16 0" ${stroke}/><ellipse cx="24" cy="16" rx="13" ry="4.5" ${stroke}/><path d="M11 16 15 40h18l4-24" ${stroke}/>`,
   start: `<path d="M16 42V8h16l-4 6 4 6H16" ${stroke}/>`,
-  plate: `<path d="M24 46V20" ${stroke}/><circle cx="24" cy="14" r="9" ${stroke}/><circle cx="24" cy="14" r="2" fill="currentColor" stroke="none"/>`,
-  "small-plate": `<path d="M24 46V24" ${stroke}/><circle cx="24" cy="18" r="6" ${stroke}/><circle cx="24" cy="18" r="1.5" fill="currentColor" stroke="none"/>`,
-  paper: `<path d="M24 46V22" ${stroke}/><rect x="13" y="6" width="22" height="18" ${stroke}/><circle cx="24" cy="15" r="4" ${stroke}/>`,
-  kyl: `<path d="M24 46V28" ${stroke}/><rect x="8" y="8" width="6" height="20" ${stroke}/><rect x="16" y="12" width="6" height="16" ${stroke}/><rect x="24" y="16" width="6" height="12" ${stroke}/><rect x="32" y="20" width="6" height="8" ${stroke}/>`,
-  square: `<path d="M24 46V26" ${stroke}/><rect x="12" y="8" width="24" height="18" ${stroke}/><circle cx="24" cy="17" r="1.8" fill="currentColor" stroke="none"/>`,
-  "double-hanger": `<path d="M24 46V6" ${stroke}/><path d="M24 14H16" ${stroke}/><circle cx="11" cy="14" r="6" ${stroke}/><circle cx="11" cy="14" r="1.4" fill="currentColor" stroke="none"/><path d="M24 28H16" ${stroke}/><circle cx="11" cy="28" r="6" ${stroke}/><circle cx="11" cy="28" r="1.4" fill="currentColor" stroke="none"/>`,
+  "small-plate": `<path d="M16 46h8V16M24 20H17.5" ${stroke}/><circle cx="13.4" cy="20" r="3.8" ${plateFill}/>`,
+  paper: `<path d="M14 46h10V20M24 22H16" ${stroke}/><rect x="3" y="12" width="13" height="16" ${stroke}/><circle cx="9.5" cy="20" r="2.4" ${stroke}/>`,
+  square: `<path d="M14 46h10V18M24 22H16" ${stroke}/><rect x="3" y="10" width="13" height="13" ${plateFill}/>`,
 };
 
 export const STAGE_PIECES = [
-  { kind: "barricade", label: "Barricade", group: "prop" },
+  { kind: "cinderblock", label: "Cinderblock", group: "prop" },
+  { kind: "cinderblocks", label: "Cinderblocks x2", group: "prop" },
+  { kind: "ladder", label: "6 ft ladder", group: "prop" },
+  { kind: "barrel", label: "55-gal barrel", group: "prop" },
+  { kind: "barrel-horizontal", label: "Horizontal cradle", group: "prop" },
+  { kind: "barrel-vertical", label: "Vertical cradle", group: "prop" },
+  { kind: "roof", label: "Rooftop", group: "prop" },
+  { kind: "pyramid", label: "Pyramid", group: "prop" },
   { kind: "tank", label: "Tank trap", group: "prop" },
-  { kind: "roof", label: "Roof", group: "prop" },
-  { kind: "window", label: "Window", group: "prop" },
-  { kind: "ladder", label: "Ladder", group: "prop" },
+  { kind: "sawhorse", label: "Sawhorse", group: "prop" },
+  { kind: "chair", label: "Chair", group: "prop" },
+  { kind: "bucket", label: "5-gal bucket", group: "prop" },
+  { kind: "bucket-2", label: "2-gal bucket", group: "prop" },
+  { kind: "tripod", label: "Tripod", group: "prop" },
   { kind: "tire", label: "Tire", group: "prop" },
-  { kind: "tire-horizontal", label: "Horizontal tire", group: "prop" },
-  { kind: "table", label: "Table", group: "prop" },
-  { kind: "wall", label: "Wall", group: "prop" },
-  { kind: "tower", label: "Tower", group: "prop" },
-  { kind: "barrel", label: "Barrel", group: "prop" },
-  { kind: "barrel-horizontal", label: "Horizontal barrel", group: "prop" },
-  { kind: "bucket", label: "5 gal bucket", group: "prop" },
-  { kind: "start", label: "Start", group: "prop" },
-  { kind: "plate", label: "Plate", group: "target" },
-  { kind: "small-plate", label: "Small plate", group: "target" },
-  { kind: "paper", label: "Paper", group: "target" },
-  { kind: "kyl", label: "KYL", group: "target" },
-  { kind: "square", label: "Square", group: "target" },
+  { kind: "plate", label: "Single hanger", group: "target" },
   { kind: "double-hanger", label: "Double hanger", group: "target" },
+  { kind: "kyl", label: "KYL rack", group: "target" },
+  { kind: "round-plate", label: "Round plate", group: "target" },
+  { kind: "square", label: "Square plate", group: "target" },
+  { kind: "barricade", label: "Barricade", group: "prop", offer: false },
+  { kind: "window", label: "Window", group: "prop", offer: false },
+  { kind: "tire-horizontal", label: "Horizontal tire", group: "prop", offer: false },
+  { kind: "table", label: "Table", group: "prop", offer: false },
+  { kind: "wall", label: "Wall", group: "prop", offer: false },
+  { kind: "tower", label: "Tower", group: "prop", offer: false },
+  { kind: "start", label: "Start", group: "prop", offer: false },
+  { kind: "small-plate", label: "Small plate", group: "target", offer: false },
+  { kind: "paper", label: "Paper", group: "target", offer: false },
+  { kind: "square", label: "Square", group: "target", offer: false },
 ];
 
 const LABELS = new Map(STAGE_PIECES.map((piece) => [piece.kind, piece.label]));
@@ -125,20 +129,23 @@ function isoInverse(px, py) {
   };
 }
 
-const PIECE_FRAC = 0.18;
+const PIECE_H = 0.2;
 const ICON = 48;
 const POST_Y = 46;
 
 function iconBox(item) {
   const cx = (item.x / 100) * BAY.w;
   const cy = (item.y / 100) * BAY.h;
-  const side = Math.min(PIECE_FRAC * BAY.w, PIECE_FRAC * BAY.h);
-  return { x: cx - side / 2, y: cy - side / 2, w: side, h: side };
+  const aspect = NRL_ASPECT[item.kind] ?? 1;
+  const h = PIECE_H * BAY.h;
+  const w = h * aspect;
+  return { x: cx - w / 2, y: cy - h / 2, w, h };
 }
 
 function postBase(item) {
   const box = iconBox(item);
-  return { x: box.x + box.w / 2, y: box.y + (POST_Y / ICON) * box.h };
+  const foot = NRL_FOOT[item.kind] || [0.5, POST_Y / ICON];
+  return { x: box.x + foot[0] * box.w, y: box.y + foot[1] * box.h };
 }
 
 function labelAnchor(point, side) {
@@ -231,7 +238,14 @@ function quadsOverlap(quad, box) {
 }
 
 function pieceSvg(kind) {
-  return `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">${MARKS[kind] || MARKS.plate}</svg>`;
+  if (NRL_MARKS[kind]) return NRL_MARKS[kind];
+  const mark = MARKS[kind] || NRL_MARKS.plate;
+  return `<svg viewBox="0 0 48 48" aria-hidden="true" focusable="false">${mark}</svg>`;
+}
+
+function pieceStyle(item) {
+  const ratio = NRL_ASPECT[item.kind] ?? 1;
+  return `left:${item.x}%;top:${item.y}%;--piece-ratio:${ratio}`;
 }
 
 function joinNames(items) {
@@ -305,13 +319,13 @@ function briefHtml(start, description) {
 }
 
 function viewGlyph(item) {
-  return `<div class="stage-piece" style="left:${item.x}%;top:${item.y}%">${pieceSvg(item.kind)}</div>`;
+  return `<div class="stage-piece" style="${pieceStyle(item)}">${pieceSvg(item.kind)}</div>`;
 }
 
 function pieceControl(item, index, selected) {
   const label = LABELS.get(item.kind);
   const where = item.distance ? `, ${distanceLabel(item.distance)}` : "";
-  return `<button type="button" class="stage-piece${selected ? " is-selected" : ""}" data-index="${index}" data-kind="${esc(item.kind)}" style="left:${item.x}%;top:${item.y}%" aria-pressed="${selected ? "true" : "false"}" aria-label="${esc(`${label}${where}. Arrow keys move it. Delete removes it.`)}">${pieceSvg(item.kind)}</button>`;
+  return `<button type="button" class="stage-piece${selected ? " is-selected" : ""}" data-index="${index}" data-kind="${esc(item.kind)}" style="${pieceStyle(item)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${esc(`${label}${where}. Arrow keys move it. Delete removes it.`)}">${pieceSvg(item.kind)}</button>`;
 }
 
 function bayHtml(items, { thumb = false, label = "" } = {}) {
@@ -342,7 +356,7 @@ export function stagePicture(stage, { thumb = false } = {}) {
 
 function palette(group, title) {
   const buttons = STAGE_PIECES
-    .filter((piece) => piece.group === group)
+    .filter((piece) => piece.group === group && piece.offer !== false)
     .map((piece) => `<button type="button" class="piece-add" data-add-piece="${piece.kind}">${pieceSvg(piece.kind)}<span>${esc(piece.label)}</span></button>`)
     .join("");
   return `

@@ -907,8 +907,9 @@ main#content:focus-visible { outline: 2px solid var(--orange); outline-offset: -
 
 .stage-piece {
   position: absolute;
-  width: 18%;
-  height: 18%;
+  width: auto;
+  height: 20%;
+  aspect-ratio: var(--piece-ratio, 1);
   margin: 0;
   padding: 0;
   border: 0;
@@ -918,8 +919,6 @@ main#content:focus-visible { outline: 2px solid var(--orange); outline-offset: -
 }
 
 .stage-editor .stage-piece {
-  min-width: 44px;
-  min-height: 44px;
   cursor: grab;
   touch-action: none;
   -webkit-user-select: none;

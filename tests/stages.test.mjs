@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { courseFor, expandMatch, occurrenceDates } from "../js/recurrence.js";
 import { courseStageList, matchDraft, packStageImage, stageDraft, stageSnapshot, venueDraft } from "../js/roles.js";
-import { cleanLayout, stagePicture } from "../js/stage-board.js";
+import { cleanLayout, stageEditorHtml, stagePicture } from "../js/stage-board.js";
 import { isCourseBrief } from "../js/util.js";
 
 const director = { id: "usr-ada", name: "Ada Quinn" };
@@ -76,6 +76,19 @@ assert.deepEqual(cleanLayout([
   { kind: "bucket", x: 70, y: 60 },
 ]);
 assert.equal(cleanLayout([{ kind: "plate", x: 40, y: 60, distance: "  44 yards  " }])[0].distance, "44 yards");
+assert.equal(cleanLayout([{ kind: "kyl", x: 40, y: 50, distance: "40" }])[0].distance, "40");
+assert.equal(cleanLayout([{ kind: "pyramid", x: 22, y: 70 }])[0].kind, "pyramid");
+assert.equal(cleanLayout([{ kind: "tripod", x: 22, y: 70, distance: "10" }])[0].distance, undefined);
+assert.equal(cleanLayout([{ kind: "chair", x: 22, y: 70, distance: "10" }])[0].distance, undefined);
+assert.equal(cleanLayout([{ kind: "round-plate", x: 40, y: 50, distance: "50" }])[0].distance, "50");
+assert.equal(cleanLayout([{ kind: "window", x: 22, y: 70 }])[0].kind, "window");
+const palette = stageEditorHtml({});
+for (const label of ["Cinderblock", "Cinderblocks x2", "6 ft ladder", "55-gal barrel", "Horizontal cradle", "Vertical cradle", "Rooftop", "Pyramid", "Tank trap", "Sawhorse", "Chair", "5-gal bucket", "2-gal bucket", "Tripod", "Tire", "Single hanger", "Double hanger", "KYL rack", "Round plate", "Square plate"]) {
+  assert.match(palette, new RegExp(`>${label}<`));
+}
+assert.doesNotMatch(palette, /data-add-piece="window"/);
+assert.doesNotMatch(palette, /data-add-piece="paper"/);
+assert.match(palette, /data-add-piece="tire"/);
 assert.equal(cleanLayout([{ kind: "double-hanger", x: 50, y: 40, distance: "180" }])[0].distance, "180");
 assert.deepEqual(cleanLayout("nope"), []);
 assert.equal(cleanLayout(new Array(30).fill({ kind: "tire", x: 50, y: 50 })).length, 24);
