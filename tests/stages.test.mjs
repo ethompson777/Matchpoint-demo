@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { courseFor, expandMatch, occurrenceDates } from "../js/recurrence.js";
 import { courseStageList, matchDraft, packStageImage, stageDraft, stageSnapshot, venueDraft } from "../js/roles.js";
 import { cleanLayout, stageEditorHtml, stagePicture } from "../js/stage-board.js";
-import { isCourseBrief } from "../js/util.js";
+import { effectiveRegistrationStatus, isCourseBrief, registrationOpensDate } from "../js/util.js";
 
 const director = { id: "usr-ada", name: "Ada Quinn" };
 const disciplines = ["PRS", "Outlaw"];
@@ -197,6 +197,7 @@ const {
   login,
   logout,
   registerUser,
+  removeDirectedMatch,
   removeStage,
   saveDirectedMatch,
   saveStage,
@@ -205,6 +206,7 @@ const {
   setMatchDirector,
   setOccurrenceException,
   stages,
+  venues,
 } = await import("../js/store.js");
 
 initStore();
@@ -298,6 +300,51 @@ assert.equal(ladder.shots, 10);
 assert.equal(ladder.time, "120");
 assert.equal(ladder.directorUserId, demoDirector.id);
 assert.equal(ladder.layout.filter((item) => item.distance).map((item) => item.distance).join(","), "40,50,85");
+const outlaw = directedMatches().find((match) => match.id === "mch-demo-outlaw");
+assert.equal(outlaw.name, "Outlaw Rimfire Series");
+assert.equal(outlaw.discipline, "Outlaw");
+assert.equal(outlaw.fee, 20);
+assert.equal(outlaw.capacity, 20);
+assert.equal(outlaw.schedule.rounds, "120");
+assert.equal(outlaw.summary, "Beginner Friendly PRS Match!");
+assert.equal(outlaw.registrationStatus, "closed");
+assert.equal(outlaw.registrationLeadDays, 30);
+assert.equal(outlaw.directorUserId, demoDirector.id);
+assert.equal(outlaw.location.address, "23195 Co Rd 105, Ramah, CO 80832");
+assert.equal(venues().find((venue) => venue.id === "ven-demo-blgc").name, "BLGC");
+const outlawDates = expandMatch(outlaw, "2026-10-15");
+assert.equal(outlawDates.length, 13);
+assert.equal(outlawDates[0].startDate, "2026-10-24");
+assert.equal(outlawDates[0].seriesLabel, "Every 4th Saturday");
+assert.equal(outlawDates[1].startDate, "2026-11-28");
+assert.equal(outlawDates[2].startDate, "2026-12-26");
+assert.equal(outlawDates.at(-1).startDate, "2027-10-23");
+assert.equal(effectiveRegistrationStatus(outlawDates[0], "2026-10-15"), "open");
+assert.equal(registrationOpensDate(outlawDates[1]), "2026-10-29");
+assert.equal(effectiveRegistrationStatus(outlawDates[1], "2026-10-15"), "closed");
+assert.equal(registrationOpensDate(outlawDates[2]), "2026-11-26");
+outlaw.fee = 25;
+await ensureDirector();
+assert.equal(directedMatches().find((match) => match.id === "mch-demo-outlaw").fee, 25);
+assert.equal(directedMatches().filter((match) => match.id === "mch-demo-outlaw").length, 1);
+removeDirectedMatch("mch-demo-outlaw");
+const standIn = saveDirectedMatch(matchDraft(demoDirector, {
+  ...fields,
+  name: "Outlaw Rimfire Series",
+  startDate: "2026-10-24",
+  endDate: "2026-10-24",
+  venueId: "ven-demo-blgc",
+  venue: "BLGC",
+  address: "23195 Co Rd 105, Ramah, CO 80832",
+  discipline: "Outlaw",
+  repeat: "monthly",
+}, disciplines));
+await ensureDirector();
+assert.equal(directedMatches().some((match) => match.id === "mch-demo-outlaw"), false);
+removeDirectedMatch(standIn.id);
+await ensureDirector();
+assert.equal(directedMatches().filter((match) => match.name === "Outlaw Rimfire Series").length, 1);
+assert.equal(venues().filter((venue) => venue.id === "ven-demo-blgc").length, 1);
 const before = stages().length;
 await ensureDirector();
 assert.equal(stages().filter((item) => item.id === "stg-demo-barrels").length, 1);

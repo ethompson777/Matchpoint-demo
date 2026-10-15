@@ -27,6 +27,8 @@ const DIRECTOR_EMAIL = "matchdirector@matchpoint.local";
 const DIRECTOR_PASSWORD = "MatchDirector";
 const DIRECTOR_NAME = "Match Director";
 const DIRECTOR_ID = "usr-match-director";
+const DEMO_VENUE_ID = "ven-demo-blgc";
+const DEMO_MATCH_ID = "mch-demo-outlaw";
 
 const DEMO_STAGES = [
   {
@@ -293,40 +295,90 @@ function seedDirectorStages(director) {
   if (added) commit();
 }
 
+function seedDirectorMatch(director) {
+  if (state.directedMatches.some((match) => match.id === DEMO_MATCH_ID)) return;
+  if (state.directedMatches.some((match) => match.name === "Outlaw Rimfire Series")) return;
+  let venue = state.venues.find((item) => item.id === DEMO_VENUE_ID);
+  if (!venue) {
+    venue = normalizeVenue({
+      id: DEMO_VENUE_ID,
+      name: "BLGC",
+      address: "23195 Co Rd 105, Ramah, CO 80832",
+      directorUserId: director.id,
+      createdAt: "2026-10-15T00:00:00.000Z",
+    });
+    if (!venue) return;
+    state.venues.push(venue);
+  }
+  state.directedMatches.unshift({
+    id: DEMO_MATCH_ID,
+    name: "Outlaw Rimfire Series",
+    startDate: "2026-10-24",
+    endDate: "2026-10-24",
+    location: { venue: venue.name, address: venue.address },
+    venueId: venue.id,
+    discipline: "Outlaw",
+    summary: "Beginner Friendly PRS Match!",
+    description: "Beginner Friendly PRS Match!",
+    registrationStatus: "closed",
+    registrationOpens: null,
+    registrationLeadDays: 30,
+    capacity: 20,
+    registeredCount: 0,
+    fee: 20,
+    matchDirector: director.name || DIRECTOR_NAME,
+    directorUserId: director.id,
+    schedule: { checkIn: "", firstShot: "", rounds: "120", stageCount: 0 },
+    integrations: { impactMatchId: null, nrlEventId: null, prsEventId: null, practiscoreId: null },
+    documents: [
+      { label: "Match book", kind: "PDF", href: null, status: "Not posted" },
+      { label: "Stage photos", kind: "Gallery", href: null, status: "Not posted" },
+      { label: "Results", kind: "Impact Scoring", href: null, status: "After the match" },
+    ],
+    results: { source: null, href: null, published: false },
+    stages: [],
+    courses: {},
+    origin: "director",
+    recurrence: { frequency: "monthly", interval: 1, byWeekday: 6, bySetPos: 4, until: null },
+    exceptions: {},
+    createdAt: "2026-10-15T00:00:00.000Z",
+  });
+  commit();
+}
+
 export async function ensureDirector() {
   let director = state.users.find((user) => user.email === DIRECTOR_EMAIL);
   const healthy = director?.role === "member"
     && director.permissions?.matchDirector === true
     && await passwordMatches(director, DIRECTOR_PASSWORD);
-  if (healthy) {
-    seedDirectorStages(director);
-    return;
-  }
-  const salt = crypto.randomUUID();
-  const passwordHash = await digest(salt, DIRECTOR_PASSWORD);
-  if (director) {
-    director.role = "member";
-    director.permissions = { matchDirector: true };
-    director.salt = salt;
-    director.passwordHash = passwordHash;
-    if (!director.name) director.name = DIRECTOR_NAME;
-    commit();
-  } else {
-    const id = state.users.some((user) => user.id === DIRECTOR_ID) ? uid("usr") : DIRECTOR_ID;
-    director = blankUser({
-      id,
-      name: DIRECTOR_NAME,
-      email: DIRECTOR_EMAIL,
-      salt,
-      passwordHash,
-      role: "member",
-      permissions: { matchDirector: true },
-      createdAt: new Date().toISOString(),
-    });
-    state.users.push(director);
-    commit();
+  if (!healthy) {
+    const salt = crypto.randomUUID();
+    const passwordHash = await digest(salt, DIRECTOR_PASSWORD);
+    if (director) {
+      director.role = "member";
+      director.permissions = { matchDirector: true };
+      director.salt = salt;
+      director.passwordHash = passwordHash;
+      if (!director.name) director.name = DIRECTOR_NAME;
+      commit();
+    } else {
+      const id = state.users.some((user) => user.id === DIRECTOR_ID) ? uid("usr") : DIRECTOR_ID;
+      director = blankUser({
+        id,
+        name: DIRECTOR_NAME,
+        email: DIRECTOR_EMAIL,
+        salt,
+        passwordHash,
+        role: "member",
+        permissions: { matchDirector: true },
+        createdAt: new Date().toISOString(),
+      });
+      state.users.push(director);
+      commit();
+    }
   }
   seedDirectorStages(director);
+  seedDirectorMatch(director);
 }
 
 export function currentUser() {
